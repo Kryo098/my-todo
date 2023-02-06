@@ -111,6 +111,12 @@ impl TodoRepository for TodoRepositoryForMemory {
 }
 
 #[cfg(test)]
+impl CreateTodo {
+    pub fn new(text: String) -> Self {
+        Self { text }
+    }
+}
+
 mod test {
     use super::*;
 
