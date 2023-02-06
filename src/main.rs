@@ -39,7 +39,12 @@ fn create_app<T: TodoRepository>(repository: T) -> Router {
     Router::new()
         .route("/", get(root))
         .route("/todos", post(create_todo::<T>).get(all_todo::<T>))
-        .route("/todos/:id", get(find_todo::<T>).patch(update_todo::<T>))
+        .route(
+            "/todos/:id",
+            get(find_todo::<T>)
+                .delete(delete_todo::<T>)
+                .patch(update_todo::<T>),
+        )
         .layer(Extension(Arc::new(repository)))
 }
 
@@ -77,5 +82,22 @@ mod test {
         let todo: Todo = serde_json::from_str(&body)
             .expect(&format!("cannot convert Todo instance. body:{}", body));
         todo
+    }
+
+    #[tokio::test]
+    async fn should_created_todo() {
+        let expected = Todo::new(1, "should_return_created_todo".to_string());
+
+        let repository = TodoRepositoryForMemory::new();
+
+        let req = build_todo_req_with_json(
+            "/todos",
+            Method::POST,
+            r#"{ "text": "should_return_created_todo" }"#.to_string(),
+        );
+
+        let res = create_app(repository).oneshot(req).await.unwrap();
+        let todo = res_to_todo(res).await;
+        assert_eq!(expected, todo);
     }
 }
